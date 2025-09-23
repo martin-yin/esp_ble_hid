@@ -6,6 +6,7 @@
 #include "ble_gap.h"
 #include "hid_param.h"
 #include "hid_usage.h"
+#include <stdio.h>
 
 static const char *TAG = "hid_event";
 
@@ -36,6 +37,7 @@ void ble_hid_demo_task(void *pvParameters) {
     case 'm': // Android主页键
       send_consumer_key_report(0x0223);
       break;
+    case 'r':
       send_consumer_key_report(0x01A2);
       break;
     case 'h': // 帮助信息

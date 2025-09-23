@@ -279,8 +279,8 @@ esp_err_t hid_ble_gap_adv_start(void) {
   return rc;
 }
 
-void ble_hid_device_host_task(void *param) {
-  ESP_LOGI(TAG, "BLE Host Task Started");
-  nimble_port_run();
-  nimble_port_freertos_deinit();
-}
+// void ble_hid_device_host_task(void *param) {
+//   ESP_LOGI(TAG, "BLE Host Task Started");
+//   nimble_port_run();
+//   nimble_port_freertos_deinit();
+// }
