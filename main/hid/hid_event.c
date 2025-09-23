@@ -5,6 +5,7 @@
 #include "esp_log.h"
 #include "ble_gap.h"
 #include "hid_param.h"
+#include "hid_usage.h"
 
 static const char *TAG = "hid_event";
 
@@ -14,33 +15,28 @@ void ble_hid_demo_task(void *pvParameters) {
     c = fgetc(stdin);
     switch (c) {
     case 'k':
-      // int16_t hid_x = screen_to_hid_coord(400, 1080);
-      // int16_t hid_y = screen_to_hid_coord(400, 2340);
-      // touch(1, hid_x, hid_y);
+      touch(1, 300, 400);
       break;
     // 键盘功能测试命令
     case '1': // 发送单个字母 'a'
-      // press_keys("Hello");
+      press_keys("Hello");
       break;
-    case '2': // 发送大写字母 'A' (Shift+A)
-      // press_key_combination(KEY_MOD_LSHIFT, KEY_A);
+      press_key_combination(KEY_MOD_LSHIFT, KEY_A);
       vTaskDelay(pdMS_TO_TICKS(50));
       break;
     case '3': // 发送字符串 "Hello World!"
-      // press_keys("Hello World!");
+      press_keys("Hello World!");
       break;
     case '4': // 发送 Ctrl+V
-      // press_key_combination(KEY_MOD_LCTRL, KEY_V);
+      press_key_combination(KEY_MOD_LCTRL, KEY_V);
       break;
-    // Android系统按键测试命令
     case 'b': // Android返回键
-      // android_back_key();
+      send_consumer_key_report(0x0224);
       break;
     case 'm': // Android主页键
-      // android_home_key();
+      send_consumer_key_report(0x0223);
       break;
-    case 'r': // Android最近应用键
-      // android_recent_apps_key();
+      send_consumer_key_report(0x01A2);
       break;
     case 'h': // 帮助信息
       printf("HID BLE demo help:\n");
