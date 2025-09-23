@@ -8,7 +8,6 @@
 
 static const char *TAG = "BLE_GATT_SVCS";
 
-// 自定义服务 UUID (128-bit)
 static const ble_uuid128_t hid_control_svc_uuid = 
     BLE_UUID128_INIT(0x00, 0x00, 0x15, 0x25, 0x12, 0xef, 0xde, 0x15, 0x23, 0x78, 0x5f, 0xea, 0xbc, 0xd1, 0x23, 0x00);
 
@@ -55,7 +54,7 @@ static int hid_command_chr_access(uint16_t conn_handle, uint16_t attr_handle, st
 }
 
 // GATT 服务定义
-static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
+static const struct ble_gatt_svc_def gatt_services[] = {
     {
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
         .uuid = &hid_control_svc_uuid.u,
@@ -72,12 +71,19 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
 };
 
 esp_err_t gatt_svc_init(void) {
-    int rc;
     ble_svc_gatt_init();  // 初始化 GATT 服务
-    rc = ble_gatts_count_cfg(gatt_svr_svcs);
-    if (rc != 0) return ESP_FAIL;
-    rc = ble_gatts_add_svcs(gatt_svr_svcs);
-    if (rc != 0) return ESP_FAIL;
-    ESP_LOGI(TAG, "Custom GATT services registered");
+    int rc = ble_gatts_count_cfg(gatt_services);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "ble_gatts_count_cfg failed: %d", rc);
+        return ESP_FAIL;
+    }
+    
+    rc = ble_gatts_add_svcs(gatt_services);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "ble_gatts_add_svcs failed: %d", rc);
+        return ESP_FAIL;
+    }
+    
+    ESP_LOGI(TAG, "Custom GATT service initialized successfully");
     return ESP_OK;
 }

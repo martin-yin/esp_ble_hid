@@ -30,12 +30,6 @@ void ble_hid_device_host_task(void *param) {
 
 void ble_store_config_init(void);
 
-static void ble_on_sync(void) {
-    ESP_LOGI(TAG, "BLE stack synced");
-    gatt_svc_init();  // 注册新 GATT 服务
-    hid_ble_gap_adv_start();   // 您的现有广告启动（从 ble_gap.c）
-}
-
 void app_main(void) {
   esp_err_t ret;
   ret = nvs_flash_init();
@@ -55,9 +49,10 @@ void app_main(void) {
   ESP_ERROR_CHECK(esp_hidd_dev_init(&hid_config, ESP_HID_TRANSPORT_BLE,
                                     hid_event_callback,
                                     &s_ble_hid_param.hid_dev));
+
+  gatt_svc_init(); 
   ble_store_config_init();
   ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
-  ble_hs_cfg.sync_cb = ble_on_sync;
   ret = esp_nimble_enable(ble_hid_device_host_task);
   if (ret) {
     ESP_LOGE(TAG, "esp_nimble_enable failed: %d", ret);
