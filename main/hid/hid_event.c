@@ -22,8 +22,8 @@ void ble_hid_demo_task(void *pvParameters) {
     case '1': // 发送单个字母 'a'
       press_keys("Hello");
       break;
+    case '2':
       press_key_combination(KEY_MOD_LSHIFT, KEY_A);
-      vTaskDelay(pdMS_TO_TICKS(50));
       break;
     case '3': // 发送字符串 "Hello World!"
       press_keys("Hello World!");

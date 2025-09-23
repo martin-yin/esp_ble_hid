@@ -7,6 +7,7 @@
 #include "freertos/semphr.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
+#include "hid_event.h"
 
 static const char *TAG = "ble_gap";
 #define GATT_SVR_SVC_HID_UUID 0x1812
@@ -60,7 +61,7 @@ static int nimble_hid_gap_event(struct ble_gap_event *event, void *arg) {
                 event->enc_change.status);
     rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
     assert(rc == 0);
-    // ble_hid_task_start_up();
+    ble_hid_task_start_up();
     return 0;
 
   case BLE_GAP_EVENT_NOTIFY_TX:
