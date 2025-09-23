@@ -21,7 +21,8 @@ esp_err_t hid_ble_gap_adv_init(uint16_t appearance, const char *device_name);
  * @brief 启动BLE广播
  * @return ESP_OK 成功；其他值 失败
  */
-esp_err_t esp_hid_ble_gap_adv_start(void);
+esp_err_t hid_ble_gap_adv_start(void);
 
+void ble_hid_device_host_task(void *param);
 void ble_host_task(void *param);
 #endif // BLE_GAP_H

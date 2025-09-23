@@ -20,13 +20,7 @@ static esp_hid_device_config_t hid_config = {
     .report_maps = hid_raw_report_map,
     .report_maps_len = 1
 };
-void ble_store_config_init(void);
 
-void ble_hid_device_host_task(void *param) {
-  ESP_LOGI(TAG, "BLE Host Task Started");
-  nimble_port_run();
-  nimble_port_freertos_deinit();
-}
 
 void app_main(void) {
   esp_err_t ret;
@@ -47,7 +41,7 @@ void app_main(void) {
   ESP_ERROR_CHECK(esp_hidd_dev_init(&hid_config, ESP_HID_TRANSPORT_BLE,
                                     hid_event_callback,
                                     &s_ble_hid_param.hid_dev));
- ble_store_config_init();
+
   ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
   ret = esp_nimble_enable(ble_hid_device_host_task);
   if (ret) {

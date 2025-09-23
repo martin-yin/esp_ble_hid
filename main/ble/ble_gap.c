@@ -253,7 +253,7 @@ esp_err_t hid_ble_gap_adv_init(uint16_t appearance,
   return ESP_OK;
 }
 
-esp_err_t esp_hid_ble_gap_adv_start(void) {
+esp_err_t hid_ble_gap_adv_start(void) {
   int rc;
   struct ble_gap_adv_params adv_params;
   int32_t adv_duration_ms = 180000;
@@ -277,4 +277,10 @@ esp_err_t esp_hid_ble_gap_adv_start(void) {
     return rc;
   }
   return rc;
+}
+
+void ble_hid_device_host_task(void *param) {
+  ESP_LOGI(TAG, "BLE Host Task Started");
+  nimble_port_run();
+  nimble_port_freertos_deinit();
 }

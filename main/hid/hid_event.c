@@ -35,7 +35,7 @@ void hid_event_callback(void *handler_args, esp_event_base_t base,
   switch (event) {
   case ESP_HIDD_START_EVENT: {
     ESP_LOGI(TAG, "START");
-    esp_hid_ble_gap_adv_start();
+    hid_ble_gap_adv_start();
     break;
   }
   case ESP_HIDD_CONNECT_EVENT: {
@@ -79,7 +79,7 @@ void hid_event_callback(void *handler_args, esp_event_base_t base,
              esp_hid_disconnect_reason_str(
                  esp_hidd_dev_transport_get(param->disconnect.dev),
                  param->disconnect.reason));
-    esp_hid_ble_gap_adv_start();
+    hid_ble_gap_adv_start();
     break;
   }
   case ESP_HIDD_STOP_EVENT: {
