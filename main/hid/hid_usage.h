@@ -105,7 +105,7 @@ enum hid_consumer {
 
 // 函数声明
 void send_keyboard_report(uint8_t modifier, uint8_t key1, uint8_t key2, uint8_t key3);
-void send_touch_report(uint8_t state, int16_t x, int16_t y);
+void send_touch_report(uint8_t state, uint16_t x, uint16_t y);
 bool char_needs_shift(char c);
 uint8_t char_to_scancode(char c);
 void press_keys(const char *str);

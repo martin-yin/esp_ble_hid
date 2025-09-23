@@ -25,18 +25,20 @@ void send_keyboard_report(uint8_t modifier, uint8_t key1, uint8_t key2, uint8_t 
 }
 
 // 发送 HID 触摸报告（添加边界检查）
-void send_touch_report(uint8_t state, int16_t x, int16_t y) {
-    if (x < 0 || x > 32767 || y < 0 || y > 32767) {
+void send_touch_report(uint8_t state, uint16_t x, uint16_t y) {
+    if (x > 65535 || y > 65535) {
         ESP_LOGW(TAG, "Invalid touch coords: x=%d, y=%d", x, y);
         return;
     }
     uint8_t buffer[HID_TOUCH_REPORT_SIZE];
     memset(buffer, 0, sizeof(buffer));
-    buffer[0] = (state > 0) ? 0x03 : 0x00;  // tip switch + in range
-    buffer[1] = x & 0xFF;
-    buffer[2] = (x >> 8) & 0xFF;
-    buffer[3] = y & 0xFF;
-    buffer[4] = (y >> 8) & 0xFF;
+    
+    buffer[0] = (state > 0) ? 0x03 : 0x02; 
+    
+    buffer[1] = x & 0xFF;         
+    buffer[2] = (x >> 8) & 0xFF;  
+    buffer[3] = y & 0xFF;         
+    buffer[4] = (y >> 8) & 0xFF;  
 
     esp_err_t ret = esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, 1, buffer, sizeof(buffer));
     if (ret != ESP_OK) {
