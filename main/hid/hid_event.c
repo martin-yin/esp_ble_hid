@@ -7,7 +7,58 @@
 #include "hid_param.h"
 
 static const char *TAG = "hid_event";
+
 void ble_hid_demo_task(void *pvParameters) {
+  char c;
+  while (1) {
+    c = fgetc(stdin);
+    switch (c) {
+    case 'k':
+      // int16_t hid_x = screen_to_hid_coord(400, 1080);
+      // int16_t hid_y = screen_to_hid_coord(400, 2340);
+      // touch(1, hid_x, hid_y);
+      break;
+    // 键盘功能测试命令
+    case '1': // 发送单个字母 'a'
+      // press_keys("Hello");
+      break;
+    case '2': // 发送大写字母 'A' (Shift+A)
+      // press_key_combination(KEY_MOD_LSHIFT, KEY_A);
+      vTaskDelay(pdMS_TO_TICKS(50));
+      break;
+    case '3': // 发送字符串 "Hello World!"
+      // press_keys("Hello World!");
+      break;
+    case '4': // 发送 Ctrl+V
+      // press_key_combination(KEY_MOD_LCTRL, KEY_V);
+      break;
+    // Android系统按键测试命令
+    case 'b': // Android返回键
+      // android_back_key();
+      break;
+    case 'm': // Android主页键
+      // android_home_key();
+      break;
+    case 'r': // Android最近应用键
+      // android_recent_apps_key();
+      break;
+    case 'h': // 帮助信息
+      printf("HID BLE demo help:\n");
+      printf("k - touch screen at (400, 400)\n");
+      printf("1 - send 'Hello'\n");
+      printf("2 - send Shift+A\n");
+      printf("3 - send 'Hello World!'\n");
+      printf("4 - send Ctrl+V\n");
+      printf("b - Android back key\n");
+      printf("m - Android home key\n");
+      printf("r - Android recent apps key\n");
+      printf("h - show this help\n");
+      break;
+    default:
+      break;
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+  }
 }
 
 
@@ -19,6 +70,7 @@ void ble_hid_task_start_up(void) {
   xTaskCreate(ble_hid_demo_task, "ble_hid_demo_task", 3 * 1024,
               NULL, configMAX_PRIORITIES - 3, &s_ble_hid_param.task_hdl);
 }
+
 void ble_hid_task_shut_down(void) {
   if (s_ble_hid_param.task_hdl) {
     vTaskDelete(s_ble_hid_param.task_hdl);
