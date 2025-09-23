@@ -2,7 +2,8 @@ set(srcs
     "app_main.c"
     "ble/ble_gap.c"
     "hid/hid_report_map.c"
-    "ble/hid_param.c"       # 修正路径：从 hid/hid_param.c 改为 ble/hid_param.c
+    "ble/hid_param.c"
+    "ble/gatt_services.c" 
     "hid/hid_event.c"
     "hid/hid_usage.c"       # 新增
 )
