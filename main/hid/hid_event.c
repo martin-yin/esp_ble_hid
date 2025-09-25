@@ -11,12 +11,23 @@
 static const char *TAG = "hid_event";
 
 void ble_hid_demo_task(void *pvParameters) {
+#define SCREEN_WIDTH 1400  
+#define SCREEN_HEIGHT 3400 
   char c;
   while (1) {
     c = fgetc(stdin);
     switch (c) {
     case 'k':
-      touch(1, 300, 400);
+      uint16_t k_hid_x = (uint16_t)((float)880 * 65535 / SCREEN_WIDTH);
+      uint16_t k_hid_y = (uint16_t)((float)3000 * 65535 / SCREEN_HEIGHT);
+      touch(1, k_hid_x, k_hid_y);
+      vTaskDelay(pdMS_TO_TICKS(100)); 
+      break;
+    case 'j':
+      uint16_t j_hid_x = (uint16_t)((float)1770 * 65535 / SCREEN_HEIGHT);
+      uint16_t j_hid_y = (uint16_t)((float)1200 * 65535 / SCREEN_WIDTH);
+      touch(1, j_hid_x, j_hid_y);
+      vTaskDelay(pdMS_TO_TICKS(100)); 
       break;
     // 键盘功能测试命令
     case '1': // 发送单个字母 'a'

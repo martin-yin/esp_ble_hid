@@ -100,8 +100,8 @@ enum hid_consumer {
 
 // 常量定义
 #define HID_KEYBOARD_REPORT_SIZE 8  // 标准键盘报告大小
-#define HID_TOUCH_REPORT_SIZE    5  // 触摸报告大小
-#define HID_CONSUMER_REPORT_SIZE 2  // 消费者报告大小（uint16_t）
+#define HID_TOUCH_REPORT_SIZE    7  // 触摸报告大小
+#define HID_CONSUMER_REPORT_SIZE 1  // 消费者报告大小（uint16_t）
 
 // 函数声明
 void send_keyboard_report(uint8_t modifier, uint8_t key1, uint8_t key2, uint8_t key3);

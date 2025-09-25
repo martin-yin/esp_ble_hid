@@ -1,48 +1,57 @@
 #include "esp_hid_common.h"
 
 const unsigned char hid_report_map[] = {
-    // 触摸屏报告 (Report ID 1) - 用于绝对定位（触控逻辑）
-    0x05, 0x0d,                    // USAGE_PAGE (Digitizer)
+    0x05, 0x0D,                    // USAGE_PAGE (Digitizers)
     0x09, 0x04,                    // USAGE (Touch Screen)
-    0xa1, 0x01,                    // COLLECTION (Application)
-    0x85, 0x01,                    //   REPORT_ID (1)
+    0xA1, 0x01,                    // COLLECTION (Application)
+    0x85, 0x01,                    //   REPORT_ID (1)  // 添加Report ID以标准
 
-    // 触摸点集合
-    0x09, 0x20,                    //   Usage (Stylus)
-    0xA1, 0x00,                    //   Collection (Physical)
+    0x09, 0x22,                    //   USAGE (Finger)
+    0xA1, 0x00,                    //   COLLECTION (Physical)  // 改为Physical，更标准
 
-    // 触摸状态 (触摸按下/抬起)
-    0x09, 0x42,                    //     Usage (Tip Switch)
-    0x09, 0x32,                    //     USAGE (In Range)
+    0x09, 0x42,                    //     USAGE (Tip Switch)
     0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    //     REPORT_SIZE (1)
-    0x95, 0x02,                    //     REPORT_COUNT (2)
+    0x95, 0x01,                    //     REPORT_COUNT (1)
     0x81, 0x02,                    //     INPUT (Data,Var,Abs)
 
-    // 剩余6位填充
-    0x75, 0x01,                    //     REPORT_SIZE (1)
-    0x95, 0x06,                    //     REPORT_COUNT (6)
-    0x81, 0x01,                    //     INPUT (Cnst,Ary,Abs)
+    0x09, 0x32,                    //     USAGE (In Range)  // 添加In Range，通常与Tip同步
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
 
-    // 绝对X和Y坐标 (16位)
-    0x05, 0x01,                    //     Usage Page (Generic Desktop)
-    0x09, 0x01,                    //     Usage (Pointer)
-    0xA1, 0x00,                    //     Collection (Physical)
-    0x09, 0x30,                    //        Usage (X)
-    0x09, 0x31,                    //        Usage (Y)
-    0x16, 0x00, 0x00,              //        Logical Minimum (0)
-    0x27, 0xff, 0xff, 0x00, 0x00,              //        Logical Maximum (65535)
-    0x36, 0x00, 0x00,              //        Physical Minimum (0)
-    0x47, 0xff, 0xff, 0x00, 0x00,              //        Physical Maximum (65535)
-    0x66, 0x00, 0x00,              //        UNIT (None)
-    0x75, 0x10,                    //        Report Size (16)
-    0x95, 0x02,                    //        Report Count (2)
-    0x81, 0x02,                    //        Input (Data,Var,Abs)
-    0xc0,                          //     END_COLLECTION
-    0xc0,                          //   END_COLLECTION
-    0xc0,                          // END_COLLECTION
+    0x95, 0x06,                    //     REPORT_COUNT (6)  // 调整padding为6 bits
+    0x81, 0x01,                    //     INPUT (Cnst,Ary,Abs)  // 修正为标准Const Array Abs
 
+    0x09, 0x51,                    //     USAGE (Contact Identifier)  // 添加Contact ID
+    0x75, 0x08,                    //     REPORT_SIZE (8)
+    0x95, 0x01,                    //     REPORT_COUNT (1)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+
+    0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x26, 0xFF, 0xFF,              //     LOGICAL_MAXIMUM (65535) 
+    0x75, 0x10,                    //     REPORT_SIZE (16)
+    0x95, 0x01,                    //     REPORT_COUNT (1)
+    0x09, 0x30,                    //     USAGE (X)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    0x09, 0x31,                    //     USAGE (Y)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+
+    0xC0,                          //   END_COLLECTION
+
+    0x05, 0x0D,                    // USAGE_PAGE (Digitizers)
+    0x09, 0x54,                    //   USAGE (Contact Count)  // 添加当前触点数
+    0x95, 0x01,                    //   REPORT_COUNT (1)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)  // 单点
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+    0x09, 0x55,                    //   USAGE (Contact Count Maximum)  // 添加特征报告
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
+    0xB1, 0x02,                    //   FEATURE (Data,Var,Abs)  // 常量特征
+
+    0xC0 ,                          // END_COLLECTION
     // 键盘报告 (Report ID 3)
     0x05, 0x01, // USAGE_PAGE (Generic Desktop)
     0x09, 0x06, // USAGE (Keyboard)
@@ -62,7 +71,7 @@ const unsigned char hid_report_map[] = {
     // 保留字节
     0x95, 0x01, //   REPORT_COUNT (1)
     0x75, 0x08, //   REPORT_SIZE (8)
-    0x81, 0x03, //   INPUT (Cnst,Var,Abs)
+    0x81, 0x01, //   INPUT (Cnst,Ary,Abs)  // 修正为标准Const Array Abs
 
     // 按键数组 (最多6个同时按下的按键)
     0x95, 0x06, //   REPORT_COUNT (6)
@@ -83,7 +92,7 @@ const unsigned char hid_report_map[] = {
     0x85, 0x04,                    //   REPORT_ID (4)
     
     // Android Back键
-    0x0A, 0x24, 0x02,              //   USAGE (AC Back - 0x224)
+    0x0A, 0x24, 0x02,              //   USAGE (AC Back - 0x0224)
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    //   REPORT_SIZE (1)
@@ -91,23 +100,23 @@ const unsigned char hid_report_map[] = {
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
     
     // Android Home键
-    0x0A, 0x23, 0x02,              //   USAGE (AC Home - 0x223)
+    0x0A, 0x23, 0x02,              //   USAGE (AC Home - 0x0223)
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    //   REPORT_SIZE (1)
     0x95, 0x01,                    //   REPORT_COUNT (1)
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
     
-    // Android 通知面板键 (替代Menu键)
-    0x0A, 0x94, 0x01,              //   USAGE (AL Local Machine Browser - 0x194)
+    // Android Menu键 (作为通知面板或上下文菜单的替代)
+    0x0A, 0x40, 0x00,              //   USAGE (Menu - 0x0040)
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    //   REPORT_SIZE (1)
     0x95, 0x01,                    //   REPORT_COUNT (1)
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
     
-    // Android App Switch键
-    0x0A, 0xA2, 0x01,              //   USAGE (AC Desktop Show All Applications)
+    // Android App Switch键 (最近应用/Recents)
+    0x0A, 0xA2, 0x01,              //   USAGE (AL Select Task/Application - 0x01A2)
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    //   REPORT_SIZE (1)
@@ -117,7 +126,7 @@ const unsigned char hid_report_map[] = {
     // 填充位 (4位)
     0x75, 0x04,                    //   REPORT_SIZE (4)
     0x95, 0x01,                    //   REPORT_COUNT (1)
-    0x81, 0x03,                    //   INPUT (Cnst,Var,Abs)
+    0x81, 0x01,                    //   INPUT (Cnst,Ary,Abs)  // 修正为标准Const Array Abs
     
     0xC0                           // END_COLLECTION
 };

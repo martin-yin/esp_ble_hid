@@ -30,24 +30,36 @@ void send_touch_report(uint8_t state, uint16_t x, uint16_t y) {
         ESP_LOGW(TAG, "Invalid touch coords: x=%d, y=%d", x, y);
         return;
     }
+
     uint8_t buffer[HID_TOUCH_REPORT_SIZE];
     memset(buffer, 0, sizeof(buffer));
-    
-    buffer[0] = (state > 0) ? 0x03 : 0x02; 
-    
-    buffer[1] = x & 0xFF;         
-    buffer[2] = (x >> 8) & 0xFF;  
-    buffer[3] = y & 0xFF;         
-    buffer[4] = (y >> 8) & 0xFF;  
-
-    esp_err_t ret = esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, 1, buffer, sizeof(buffer));
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send touch report: %d", ret);
+    if (state > 0) {
+        buffer[0] = 0x03; 
+        buffer[1] = 0;
+        buffer[2] = x & 0xFF;
+        buffer[3] = (x >> 8) & 0xFF;
+        buffer[4] = y & 0xFF;
+        buffer[5] = (y >> 8) & 0xFF;
+        buffer[6] = 1;
+    } else {
+        buffer[0] = 0x00;
+        buffer[1] = 0;
+        buffer[2] = 0;
+        buffer[3] = 0;
+        buffer[4] = 0;
+        buffer[5] = 0;
+        buffer[6] = 0;    // Contact Count=0
     }
-    ESP_LOGD(TAG, "Sent touch: state=0x%02X, x=%d, y=%d", buffer[0], x, y);
+    ESP_LOG_BUFFER_HEX(TAG, buffer, sizeof(buffer));
+    esp_err_t ret = esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, 1, buffer, sizeof(buffer));
+    ESP_LOGI(TAG, "esp_hidd_dev_input_set returned: %d", ret);
+    if (ret != ESP_OK) {
+        ESP_LOGI(TAG, "Failed to send touch report: %d", ret);
+        return;
+    }
+    ESP_LOGI(TAG, "Sent touch: state=0x%02X, x=%d, y=%d, count=%d", buffer[0], x, y, buffer[6]);
 }
 
-// 字符需要 Shift 的检查（扩展支持更多符号）
 bool char_needs_shift(char c) {
     return (c >= 'A' && c <= 'Z') ||
            (c == '!' || c == '@' || c == '#' || c == '$' || c == '%' ||
@@ -100,10 +112,9 @@ uint8_t char_to_scancode(char c) {
     }
 }
 
-// 发送字符串作为按键序列
+
 void press_keys(const char *str) {
     if (!str) return;
-
     for (int i = 0; str[i] != '\0'; i++) {
         char c = str[i];
         uint8_t scancode = char_to_scancode(c);
@@ -124,45 +135,45 @@ void press_key_combination(uint8_t modifier, uint8_t key) {
     send_keyboard_report(0, 0, 0, 0);
 }
 
-// 发送消费者键报告（使用 uint16_t 以支持标准 HID）
 void send_consumer_key_report(uint16_t usage_code) {
-    uint16_t buffer = 0;
+    uint8_t buffer = 0;  
     switch (usage_code) {
-        case CONSUMER_BACK:       buffer = 1 << 0; break;
-        case CONSUMER_HOME:       buffer = 1 << 1; break;
-        case CONSUMER_MENU:       buffer = 1 << 2; break;
-        case CONSUMER_APP_SWITCH: buffer = 1 << 3; break;
+        case CONSUMER_BACK:       buffer |= (1 << 0); break;  // bit0
+        case CONSUMER_HOME:       buffer |= (1 << 1); break;  // bit1
+        case CONSUMER_MENU:       buffer |= (1 << 2); break;  // bit2
+        case CONSUMER_APP_SWITCH: buffer |= (1 << 3); break;  // bit3
         default:
             ESP_LOGW(TAG, "Unknown consumer key: 0x%04X", usage_code);
             return;
     }
 
-    uint8_t buf_bytes[HID_CONSUMER_REPORT_SIZE];
-    buf_bytes[0] = buffer & 0xFF;
-    buf_bytes[1] = (buffer >> 8) & 0xFF;
+    uint8_t buf_bytes[HID_CONSUMER_REPORT_SIZE];  // 假设HID_CONSUMER_REPORT_SIZE=1
+    buf_bytes[0] = buffer;
 
     esp_err_t ret = esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, 4, buf_bytes, sizeof(buf_bytes));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send consumer report: %d", ret);
     }
-    ESP_LOGD(TAG, "Sent consumer key: 0x%04X (buffer: 0x%04X)", usage_code, buffer);
+    ESP_LOGD(TAG, "Sent consumer key: 0x%04X (buffer: 0x%02X)", usage_code, buffer);
 
     vTaskDelay(pdMS_TO_TICKS(50));  // 按键持续50ms
 
-    memset(buf_bytes, 0, sizeof(buf_bytes));
+    buf_bytes[0] = 0;  // 释放所有键
     esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, 4, buf_bytes, sizeof(buf_bytes));
 }
 
 // 发送 HID 坐标触控屏幕
 void touch(uint8_t state, int16_t hid_x, int16_t hid_y) {
     send_touch_report(state, hid_x, hid_y);
-    vTaskDelay(pdMS_TO_TICKS(50));
-    send_touch_report(0, 0, 0);
+    if (state > 0) {
+        vTaskDelay(pdMS_TO_TICKS(50));
+        send_touch_report(0, hid_x, hid_y);
+    }
 }
 
 // 长按触摸
 void long_touch(uint8_t state, int16_t hid_x, int16_t hid_y, uint32_t delay_ms) {
     send_touch_report(state, hid_x, hid_y);
     vTaskDelay(pdMS_TO_TICKS(delay_ms));
-    send_touch_report(0, 0, 0);
+    send_touch_report(0, hid_x, hid_y);
 }
