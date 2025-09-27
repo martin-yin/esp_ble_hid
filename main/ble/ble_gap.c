@@ -10,6 +10,8 @@
 #include "hid_event.h"
 
 static const char *TAG = "ble_gap";
+
+uint16_t current_conn_handle = 0; // 初始化为0（无连接）
 #define GATT_SVR_SVC_HID_UUID 0x1812
 
 static SemaphoreHandle_t bt_hidh_cb_semaphore = NULL;
@@ -26,9 +28,13 @@ static int nimble_hid_gap_event(struct ble_gap_event *event, void *arg) {
     ESP_LOGI(TAG, "connection %s; status=%d",
              event->connect.status == 0 ? "established" : "failed",
              event->connect.status);
+    if (event->connect.status == 0) {
+      current_conn_handle = event->connect.conn_handle; // 更新当前连接句柄
+    }
     return 0;
     break;
   case BLE_GAP_EVENT_DISCONNECT:
+    current_conn_handle = 0;
     ESP_LOGI(TAG, "disconnect; reason=%d (0x%04x)", event->disconnect.reason, event->disconnect.reason);
     return 0;
   case BLE_GAP_EVENT_CONN_UPDATE:

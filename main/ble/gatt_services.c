@@ -1,3 +1,4 @@
+#include "ble_gap.h"
 #include "esp_err.h"
 #include "host/ble_hs.h"
 #include "host/ble_uuid.h"
@@ -100,7 +101,21 @@ static int hid_command_chr_access(uint16_t conn_handle, uint16_t attr_handle, st
                         modifier, key);
                 press_key_combination(modifier, key); 
             }
-        } 
+        }
+
+        else if (strncmp(cmd_buf, "disconnect:", 11) == 0) {
+            if (current_conn_handle != 0) {
+                // 调用断开函数，原因使用 "用户终止连接"
+                int rc = ble_gap_terminate(current_conn_handle, BLE_GAP_EVENT_DISCONNECT);
+                if (rc != 0) {
+                    ESP_LOGE(TAG, "disconnect failed: %d", rc);
+                } else {
+                    ESP_LOGI(TAG, "disconnect success: %d", current_conn_handle);
+                }
+            } else {
+                ESP_LOGW(TAG, "no active connection");
+            }
+        }
 
         else {
             ESP_LOGW(TAG, "Unknown command: %s (supported: press,touch,consumer,longtouch,combination)", cmd_buf);

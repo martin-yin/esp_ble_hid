@@ -6,17 +6,33 @@
 #include "ble_gap.h"
 #include "hid_param.h"
 #include "hid_usage.h"
+#include "host/ble_gap.h"
 #include <stdio.h>
 
+// 如果连接的是手机这里可以修改成手机的屏幕分辨率
+#define SCREEN_WIDTH 1400  
+#define SCREEN_HEIGHT 3400 
 static const char *TAG = "hid_event";
 
 void ble_hid_demo_task(void *pvParameters) {
-#define SCREEN_WIDTH 1400  
-#define SCREEN_HEIGHT 3400 
+
   char c;
   while (1) {
     c = fgetc(stdin);
     switch (c) {
+    case 'd':
+      if (current_conn_handle != 0) {
+        // 调用断开函数，原因使用 "用户终止连接"
+        int rc = ble_gap_terminate(current_conn_handle, BLE_GAP_EVENT_DISCONNECT);
+        if (rc != 0) {
+          ESP_LOGE(TAG, "disconnect failed: %d", rc);
+        } else {
+          ESP_LOGI(TAG, "disconnect success: %d", current_conn_handle);
+        }
+      } else {
+        ESP_LOGW(TAG, "no active connection");
+      }
+      break;
     case 'k':
       uint16_t k_hid_x = (uint16_t)((float)880 * 65535 / SCREEN_WIDTH);
       uint16_t k_hid_y = (uint16_t)((float)3000 * 65535 / SCREEN_HEIGHT);

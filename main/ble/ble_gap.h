@@ -2,6 +2,7 @@
 #define BLE_GAP_H
 
 #include "esp_err.h"
+extern uint16_t current_conn_handle;
 
 /**
  * @brief 初始化BLE GAP层（信号量、基础配置）
