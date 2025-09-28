@@ -180,7 +180,6 @@ void long_touch(uint8_t state, int16_t hid_x, int16_t hid_y, uint32_t delay_ms) 
     send_touch_report(0, hid_x, hid_y);
 }
 
-
 esp_err_t parse_and_execute_command(const char *cmd) {
     const char *TAG = "command_parser";
 
@@ -267,8 +266,7 @@ esp_err_t parse_and_execute_command(const char *cmd) {
         return ESP_OK;
     }
 
-    // 处理 disconnect 命令
-    if (strncmp(cmd, "disconnect:", 11) == 0) {
+    if (strncmp(cmd, "disconnect", 1) == 0) {
         if (current_conn_handle != 0) {
             int rc = ble_gap_terminate(current_conn_handle, BLE_GAP_EVENT_DISCONNECT);
             if (rc != 0) {
