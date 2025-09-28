@@ -1,8 +1,10 @@
 // hid/hid_usage.c
 #include "hid_usage.h"
+#include "ble_gap.h"
 #include "esp_hidd.h"
 #include "hid_param.h"
 #include "esp_log.h"
+#include "host/ble_gap.h"
 #include <string.h>  // 为 memset 和 strchr
 
 static const char *TAG = "hid_usage";
@@ -176,4 +178,111 @@ void long_touch(uint8_t state, int16_t hid_x, int16_t hid_y, uint32_t delay_ms) 
     send_touch_report(state, hid_x, hid_y);
     vTaskDelay(pdMS_TO_TICKS(delay_ms));
     send_touch_report(0, hid_x, hid_y);
+}
+
+
+esp_err_t parse_and_execute_command(const char *cmd) {
+    const char *TAG = "command_parser";
+
+    if (!cmd || cmd[0] == '\0') {
+        ESP_LOGW(TAG, "Empty command");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_LOGI(TAG, "Parsing command: '%s'", cmd);
+
+    // 处理 press 命令
+    if (strncmp(cmd, "press:", 6) == 0) {
+        const char* text = cmd + 6;
+        if (strlen(text) == 0) {
+            ESP_LOGW(TAG, "Invalid press: empty text");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (strlen(text) > 64) {
+            ESP_LOGW(TAG, "Press text too long (max 64)");
+            return ESP_ERR_INVALID_SIZE;
+        }
+        ESP_LOGI(TAG, "Executing press: %s", text);
+        press_keys(text);
+        return ESP_OK;
+    }
+
+    // 处理 touch 命令
+    if (strncmp(cmd, "touch:", 6) == 0) {
+        int state, x, y;
+        if (sscanf(cmd + 6, "%d,%d,%d", &state, &x, &y) != 3) {
+            ESP_LOGW(TAG, "Invalid touch: format touch:state,x,y");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (state < 0 || state > 1) {
+            ESP_LOGW(TAG, "Invalid state (0/1)");
+            return ESP_ERR_INVALID_ARG;
+        }
+        ESP_LOGI(TAG, "Executing touch: state=%d, x=%d, y=%d", state, x, y);
+        touch((uint8_t)state, (int16_t)x, (int16_t)y);
+        return ESP_OK;
+    }
+
+    // 处理 consumer 命令
+    if (strncmp(cmd, "consumer:", 9) == 0) {
+        uint16_t code;
+        if (sscanf(cmd + 9, "0x%hx", &code) != 1 && sscanf(cmd + 9, "%hu", &code) != 1) {
+            ESP_LOGW(TAG, "Invalid consumer: format consumer:0xHH or consumer:NN");
+            return ESP_ERR_INVALID_ARG;
+        }
+        ESP_LOGI(TAG, "Executing consumer: code=0x%04X", code);
+        send_consumer_key_report(code);
+        return ESP_OK;
+    }
+
+    // 处理 longtouch 命令
+    if (strncmp(cmd, "longtouch:", 10) == 0) {
+        int state, x, y, delay_ms;
+        if (sscanf(cmd + 10, "%d,%d,%d,%d", &state, &x, &y, &delay_ms) != 4) {
+            ESP_LOGW(TAG, "Invalid longtouch: format longtouch:state,x,y,delay_ms");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (state < 0 || state > 1) {
+            ESP_LOGW(TAG, "Invalid state (0/1)");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (delay_ms <= 0) {
+            ESP_LOGW(TAG, "Invalid delay_ms (must be >0)");
+            return ESP_ERR_INVALID_ARG;
+        }
+        ESP_LOGI(TAG, "Executing longtouch: state=%d, x=%d, y=%d, delay=%d", state, x, y, delay_ms);
+        long_touch((uint8_t)state, (int16_t)x, (int16_t)y, (uint32_t)delay_ms);
+        return ESP_OK;
+    }
+
+    // 处理 combination 命令
+    if (strncmp(cmd, "combination:", 12) == 0) {
+        uint8_t modifier, key;
+        if (sscanf(cmd + 12, "%hhu,%hhu", &modifier, &key) != 2) {
+            ESP_LOGW(TAG, "Invalid combination: format combination:modifier,key");
+            return ESP_ERR_INVALID_ARG;
+        }
+        ESP_LOGI(TAG, "Executing combination: modifier=0x%02X, key=0x%02X", modifier, key);
+        press_key_combination(modifier, key);
+        return ESP_OK;
+    }
+
+    // 处理 disconnect 命令
+    if (strncmp(cmd, "disconnect:", 11) == 0) {
+        if (current_conn_handle != 0) {
+            int rc = ble_gap_terminate(current_conn_handle, BLE_GAP_EVENT_DISCONNECT);
+            if (rc != 0) {
+                ESP_LOGE(TAG, "Disconnect failed: %d", rc);
+                return ESP_FAIL;
+            }
+            ESP_LOGI(TAG, "Disconnect success");
+            return ESP_OK;
+        }
+        ESP_LOGW(TAG, "No active BLE connection");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    // 未知命令
+    ESP_LOGW(TAG, "Unknown command: '%s'", cmd);
+    return ESP_ERR_NOT_SUPPORTED;
 }

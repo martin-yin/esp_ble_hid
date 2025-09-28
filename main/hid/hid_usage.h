@@ -2,6 +2,7 @@
 #ifndef HID_USAGE_H
 #define HID_USAGE_H
 
+#include "esp_err.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -113,5 +114,5 @@ void press_key_combination(uint8_t modifier, uint8_t key);
 void send_consumer_key_report(uint16_t usage_code);
 void touch(uint8_t state, int16_t hid_x, int16_t hid_y);
 void long_touch(uint8_t state, int16_t hid_x, int16_t hid_y, uint32_t delay_ms);
-
+esp_err_t parse_and_execute_command(const char *cmd);
 #endif // HID_USAGE_H

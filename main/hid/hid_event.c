@@ -4,88 +4,19 @@
 #include "esp_hidd.h"
 #include "esp_log.h"
 #include "ble_gap.h"
-#include "hid_param.h"
+#include "hal/uart_types.h"
 #include "hid_usage.h"
 #include "host/ble_gap.h"
 #include <stdio.h>
+#include "driver/uart.h"  // 添加 UART 驱动
+#include <string.h>       // 为 strncmp 等
+#include <stdio.h>        // 为 sscanf
 
+#define UART_BUF_SIZE 128
 // 如果连接的是手机这里可以修改成手机的屏幕分辨率
 #define SCREEN_WIDTH 1400  
 #define SCREEN_HEIGHT 3400 
 static const char *TAG = "hid_event";
-
-void ble_hid_demo_task(void *pvParameters) {
-
-  char c;
-  while (1) {
-    c = fgetc(stdin);
-    switch (c) {
-    case 'd':
-      if (current_conn_handle != 0) {
-        // 调用断开函数，原因使用 "用户终止连接"
-        int rc = ble_gap_terminate(current_conn_handle, BLE_GAP_EVENT_DISCONNECT);
-        if (rc != 0) {
-          ESP_LOGE(TAG, "disconnect failed: %d", rc);
-        } else {
-          ESP_LOGI(TAG, "disconnect success: %d", current_conn_handle);
-        }
-      } else {
-        ESP_LOGW(TAG, "no active connection");
-      }
-      break;
-    case 'k':
-      uint16_t k_hid_x = (uint16_t)((float)880 * 65535 / SCREEN_WIDTH);
-      uint16_t k_hid_y = (uint16_t)((float)3000 * 65535 / SCREEN_HEIGHT);
-      touch(1, k_hid_x, k_hid_y);
-      vTaskDelay(pdMS_TO_TICKS(100)); 
-      break;
-    case 'j':
-      uint16_t j_hid_x = (uint16_t)((float)1770 * 65535 / SCREEN_HEIGHT);
-      uint16_t j_hid_y = (uint16_t)((float)1200 * 65535 / SCREEN_WIDTH);
-      touch(1, j_hid_x, j_hid_y);
-      vTaskDelay(pdMS_TO_TICKS(100)); 
-      break;
-    // 键盘功能测试命令
-    case '1': // 发送单个字母 'a'
-      press_keys("Hello");
-      break;
-    case '2':
-      press_key_combination(KEY_MOD_LSHIFT, KEY_A);
-      break;
-    case '3': // 发送字符串 "Hello World!"
-      press_keys("Hello World!");
-      break;
-    case '4': // 发送 Ctrl+V
-      press_key_combination(KEY_MOD_LCTRL, KEY_V);
-      break;
-    case 'b': // Android返回键
-      send_consumer_key_report(0x0224);
-      break;
-    case 'm': // Android主页键
-      send_consumer_key_report(0x0223);
-      break;
-    case 'r':
-      send_consumer_key_report(0x01A2);
-      break;
-    case 'h': // 帮助信息
-      printf("HID BLE demo help:\n");
-      printf("k - touch screen at (400, 400)\n");
-      printf("1 - send 'Hello'\n");
-      printf("2 - send Shift+A\n");
-      printf("3 - send 'Hello World!'\n");
-      printf("4 - send Ctrl+V\n");
-      printf("b - Android back key\n");
-      printf("m - Android home key\n");
-      printf("r - Android recent apps key\n");
-      printf("h - show this help\n");
-      break;
-    default:
-      break;
-    }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-  }
-}
-
 
 void hid_event_callback(void *handler_args, esp_event_base_t base,
                        int32_t id, void *event_data) {
@@ -145,4 +76,37 @@ void hid_event_callback(void *handler_args, esp_event_base_t base,
     break;
   }
   return;
+}
+
+
+
+void uart_task(void *pvParameters) {
+    uint8_t buf[UART_BUF_SIZE];
+    int len;
+    ESP_LOGI(TAG, "UART task started");
+    uart_flush_input(UART_NUM_0);
+
+    while (1) {
+        memset(buf, 0, UART_BUF_SIZE);
+        len = uart_read_bytes(UART_NUM_0, buf, UART_BUF_SIZE - 1, pdMS_TO_TICKS(100));
+        if (len > 0) {
+            // 移除换行符
+            for (int i = 0; i < len; i++) {
+                if (buf[i] == '\r' || buf[i] == '\n') {
+                    buf[i] = '\0';
+                    len = i;
+                    break;
+                }
+            }
+            char *cmd = (char *)buf;
+            ESP_LOGI(TAG, "Received UART command: '%s' (len=%d)", cmd, len);
+            esp_err_t ret = parse_and_execute_command(cmd);
+            if (ret != ESP_OK) {
+                ESP_LOGW(TAG, "Command execution failed: %s", esp_err_to_name(ret));
+            }
+        } else if (len < 0) {
+            ESP_LOGE(TAG, "UART read error: %s", esp_err_to_name(len));
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }

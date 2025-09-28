@@ -9,5 +9,5 @@ set(srcs
 )
 
 idf_component_register(SRCS ${srcs}
-                    PRIV_REQUIRES bt esp_hid nvs_flash  
+                    PRIV_REQUIRES bt esp_hid nvs_flash driver
                     INCLUDE_DIRS "." "ble" "hid")

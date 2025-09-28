@@ -1,5 +1,6 @@
 // app_main.c
 #include "ble_gap.h"
+#include "driver/uart.h"
 #include "hid_event.h"
 #include "hid_param.h"
 #include "hid_report_map.h"
@@ -9,6 +10,7 @@
 #include "nvs_flash.h"
 #include "host/ble_hs.h"
 #include "gatt_services.h"
+
 #define TAG "app_main"
 
 static esp_hid_device_config_t hid_config = {
@@ -54,7 +56,41 @@ void app_main(void) {
   ble_store_config_init();
   ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
   ret = esp_nimble_enable(ble_hid_device_host_task);
+
+
+  
   if (ret) {
     ESP_LOGE(TAG, "esp_nimble_enable failed: %d", ret);
   }
+
+// 初始化 UART0
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+
+    // 安装 UART 驱动，优化缓冲区大小
+    esp_err_t ret_uart = uart_driver_install(UART_NUM_0, 256, 256, 10, NULL, 0);  // RX 256 字节，TX 256 字节，队列 10
+    if (ret_uart != ESP_OK) {
+        ESP_LOGE(TAG, "UART0 install failed: %s", esp_err_to_name(ret_uart));
+        return;
+    }
+
+    // 配置 UART 参数
+    ret_uart = uart_param_config(UART_NUM_0, &uart_config);
+    if (ret_uart != ESP_OK) {
+        ESP_LOGE(TAG, "UART0 config failed: %s", esp_err_to_name(ret_uart));
+        uart_driver_delete(UART_NUM_0);
+        return;
+    }
+
+    // 不设置引脚，UART0 使用默认 GPIO43/TX, GPIO44/RX
+    ESP_LOGI(TAG, "UART0 initialized for Type-C USB");
+
+    // 启动 UART 任务
+    xTaskCreate(uart_task, "uart_task", 4096, NULL, 5, NULL);
 }

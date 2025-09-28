@@ -9,5 +9,7 @@
 void hid_event_callback(void *handler_args, esp_event_base_t base,
                        int32_t id, void *event_data);
 
-void ble_hid_task_start_up(void);
+// void ble_hid_task_start_up(void);
+
+void uart_task(void *pvParameters);
 #endif // HID_EVENT_H
