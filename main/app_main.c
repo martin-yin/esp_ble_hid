@@ -80,7 +80,6 @@ void app_main(void) {
         return;
     }
 
-    // 配置 UART 参数
     ret_uart = uart_param_config(UART_NUM_0, &uart_config);
     if (ret_uart != ESP_OK) {
         ESP_LOGE(TAG, "UART0 config failed: %s", esp_err_to_name(ret_uart));
@@ -88,9 +87,7 @@ void app_main(void) {
         return;
     }
 
-    // 不设置引脚，UART0 使用默认 GPIO43/TX, GPIO44/RX
     ESP_LOGI(TAG, "UART0 initialized for Type-C USB");
-
     // 启动 UART 任务
     xTaskCreate(uart_task, "uart_task", 4096, NULL, 5, NULL);
 }

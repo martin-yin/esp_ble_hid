@@ -79,7 +79,6 @@ void hid_event_callback(void *handler_args, esp_event_base_t base,
 }
 
 
-
 void uart_task(void *pvParameters) {
     uint8_t buf[UART_BUF_SIZE];
     int len;
@@ -88,7 +87,7 @@ void uart_task(void *pvParameters) {
 
     while (1) {
         memset(buf, 0, UART_BUF_SIZE);
-        len = uart_read_bytes(UART_NUM_0, buf, UART_BUF_SIZE - 1, pdMS_TO_TICKS(100));
+        len = uart_read_bytes(UART_NUM_0, buf, UART_BUF_SIZE - 1, pdMS_TO_TICKS(10));
         if (len > 0) {
             // 移除换行符
             for (int i = 0; i < len; i++) {
@@ -107,6 +106,5 @@ void uart_task(void *pvParameters) {
         } else if (len < 0) {
             ESP_LOGE(TAG, "UART read error: %s", esp_err_to_name(len));
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
